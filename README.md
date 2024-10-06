@@ -1,4 +1,4 @@
-![image](https://github.com/user-attachments/assets/d6a566ca-4298-4712-97ac-5c023d05d496)# Linux 驱动程序设计实验指导书
+# Linux 驱动程序设计实验指导书
 
 **Warning:各位亲爱的CSGO：Global Offensive2 的玩家朋友，我们的虚拟机无法和完美世界电竞平台同时出现在您的电脑上，为了学习嵌入式，请删除完美世界电竞平台。**
 *另：经验证，5E平台不受影响。*

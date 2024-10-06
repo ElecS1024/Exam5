@@ -61,6 +61,8 @@
    ```makefile
    obj-m += hello.o
    ```
+![Exam_makefile](assets/406a4d7f36c07d902f07eb3a59ac628.png)
+
 
 2. 保存并关闭`Makefile`文件。
 

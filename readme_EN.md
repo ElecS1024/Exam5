@@ -101,12 +101,12 @@
    dmesg | tail
    ```
 
-## 4. Display Experiment Results
+## Display Experiment Results
 In the experiment, observe the system log output:
 1. When loading the driver, `dmesg` outputs "Hello, World!".
 2. When unloading the driver, `dmesg` outputs "Goodbye, World!".
 
-## 5. Common Issues and Solutions
+## Common Issues and Solutions
 
 ### 5.1 Compilation Errors
 - **Issue**: Errors during `make`, indicating missing kernel headers.
@@ -137,13 +137,13 @@ In the experiment, observe the system log output:
   sudo apt-get install <package-name>
   ```
 
-## 6. Result Analysis
+## Result Analysis
 Successfully wrote and loaded a simple Linux driver module, understanding the basic workflow of driver development. The experiment achieved the following:
 - Learned to write a simple driver.
 - Managed driver modules using Linux commands.
 - Interacted with system logs through the driver.
 
-## 7. Questions
+## Questions
 - What is a driver? What is its purpose?
 - How can this simple driver be extended for other tasks?
 - How can drivers interact with user applications?

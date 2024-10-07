@@ -95,7 +95,8 @@
     lsmod
    ```
    可以看到输出结果
-   
+   ![Ismod.ko_makefile](assets/lsmod 第一部分.png)
+
 
 
 3. 使用`dmesg`命令查看系统日志，确认驱动模块是否输出“Hello, World!”信息：
@@ -246,15 +247,91 @@ MODULE_AUTHOR("Your Name");
 MODULE_DESCRIPTION("A simple character device driver");
 ```
 
-4. 编写完毕后保存文件，按照此方式分别编写一个测试驱动的程序取名为`test_demo.c`，一个`Makefile`文件。
+4. 编写完毕后保存文件，编写一个测试驱动的程序取名为`test_demo.c`，一个`Makefile`文件。
 
-5. 使用`ls`命令查看目录中的文件。
+test_demo.c
+```bash
+/******* test_demo.c ****/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>  // 文件控制定义
+#include <unistd.h> // UNIX 标准函数定义
+#include <string.h>
+
+#define DEVICE "/dev/demodrv"  // 设备文件路径
+#define BUF_LEN 1024  // 缓冲区长度
+
+int main() {
+    int fd;  // 文件描述符
+    char write_buf[BUF_LEN] = "Hello from user space!";  // 写入设备的缓冲区
+    char read_buf[BUF_LEN];  // 从设备读取的缓冲区
+
+    /* 打开设备 */
+    fd = open(DEVICE, O_RDWR);
+    if (fd < 0) {
+        perror("Failed to open the device");
+        return EXIT_FAILURE;
+    }
+
+    /* 向设备写入数据 */
+    if (write(fd, write_buf, strlen(write_buf)) < 0) {
+        perror("Failed to write to the device");
+        close(fd);
+        return EXIT_FAILURE;
+    }
+
+    printf("Written to the device: %s\n", write_buf);
+
+    /* 从设备读取数据 */
+    if (read(fd, read_buf, BUF_LEN) < 0) {
+        perror("Failed to read from the device");
+        close(fd);
+        return EXIT_FAILURE;
+    }
+
+    printf("Read from the device: %s\n", read_buf);
+
+    /* 关闭设备 */
+    close(fd);
+
+    return EXIT_SUCCESS;
+}
+```
+
+Makefile
+```bash
+# Makefile for compiling the demo driver and test program
+
+obj-m += demodrv.o  # 指定要编译的模块
+demodrv-objs := demo.o  # 指定模块的源文件
+
+# Kernel build directory
+KDIR := /lib/modules/$(shell uname -r)/build  # 获取当前内核版本并设置内核构建目录
+
+# Current directory
+PWD := $(shell pwd)  # 获取当前目录
+
+# Default target
+all:
+	make -C $(KDIR) M=$(PWD) modules  # 使用内核构建系统编译模块
+	gcc -o test_demo test_demo.c  # 编译测试程序
+
+# Clean up the directory
+clean:
+	make -C $(KDIR) M=$(PWD) clean  # 清理模块编译生成的文件
+	rm -f test_demo  # 删除测试程序
+```
+
+6. 使用`ls`命令查看目录中的文件。
 
     ```bash
     ls
     ```
 
     应看到如下文件：`demo.c`、`Makefile`、`test_demo.c`。
+![Ismod.ko_makefile](assets/文件夹里应该有的三个文件.png)
+
 
 ### 2. 编译驱动程序
 
@@ -263,6 +340,7 @@ MODULE_DESCRIPTION("A simple character device driver");
     ```bash
     make
     ```
+![Ismod.ko_makefile](assets/make编译成功.png)
 
 2. 编译完成后，使用`ls`命令查看生成的文件。
 
@@ -285,6 +363,7 @@ MODULE_DESCRIPTION("A simple character device driver");
     ```bash
     ll /dev/demodrv
     ```
+![Ismod.ko_makefile](assets/运行驱动程序.png)
 
 ### 4. 插入驱动模块
 
@@ -319,6 +398,7 @@ MODULE_DESCRIPTION("A simple character device driver");
     ```bash
     ./test_demo
     ```
+![Ismod.ko_makefile](assets/运行驱动程序.png)
 
 2. 观察应用程序访问驱动的情形。
 

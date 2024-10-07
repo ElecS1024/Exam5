@@ -121,6 +121,9 @@
 
 ## 掌握Linux驱动程序设计的调试过程
 
+**请注意，课本上的实验流程没有问题，但代码因为诸多原因跑不通，我重新写了一份代码，但不更改实验流程，供同学们参考**
+
+
 ### 1. 编写驱动程序
 
 1. 从虚拟机运行Linux操作系统，启动终端后新建一个目录`chrdrv`。
@@ -130,112 +133,117 @@
     cd chrdrv
     ```
 
+
 2. 使用gedit编写一个字符设备驱动框架取名为`demo.c`。
 
     ```bash
     gedit demo.c
     ```
+![Ismod.ko_makefile](assets/2a19b6227196c044d0efa3d26a449ce.png)
 
     demo.c文件内容
    ```bash
-   /******* demo.c******/
+ /******* demo.c ****/
 
-#define demo_MAJOR 267
-#define demo_MINOR 0
-static int MAX_BUF_LEN = 1024;
-static char drv_buf[1024];
-static int WRI_LENGTH = 0;
+#include <linux/module.h>  // 支持加载和卸载模块
+#include <linux/kernel.h>  // 包含系统日志函数printk
+#include <linux/fs.h>      // 包含文件操作相关的结构和定义
+#include <linux/uaccess.h> // 包含用户空间与内核空间数据复制函数
+#include <linux/slab.h>    // 包含内存分配函数，如kmalloc和kfree
+#include <linux/init.h>    // 包含模块初始化和清理函数的宏
 
-static ssize_t demo_write(struct file *, const char *, size_t);
-static ssize_t demo_read(struct file *, char *, size_t, loff_t *);
-static void do_write(void);
+// 定义设备名称和主设备号
+#define DEVICE_NAME "demodrv"
+#define MAJOR_NUM 267
+#define BUF_LEN 1024
 
-static struct file_operations demo_fops = {
-    owner: THIS_MODULE,
-    open: demo_open,
-    read: demo_read,
-    write: demo_write,
-    llseek: demo_llseek(),
-    ioctl: demo_ioctl,
-    release: demo_release,
+// 静态变量定义
+static char *device_buffer; // 设备缓存区
+static int open_count = 0;  // 设备打开计数器
+
+/* 函数原型 */
+static int demo_open(struct inode *inode, struct file *file);
+static int demo_release(struct inode *inode, struct file *file);
+static ssize_t demo_read(struct file *file, char __user *buf, size_t count, loff_t *ppos);
+static ssize_t demo_write(struct file *file, const char __user *buf, size_t count, loff_t *ppos);
+
+/* 文件操作结构体 */
+static struct file_operations fops = {
+    .open = demo_open,
+    .release = demo_release,
+    .read = demo_read,
+    .write = demo_write,
 };
 
-/************头文件*****/
-#include <linux/mm.h>
-#include <linux/module.h>
-#include <asm/segment.h>
-#include <asm/uaccess.h>
-#include <linux/init.h>
-#include <linux/kernel.h>
-#include <linux/slab.h>
-#include <linux/fs.h>
-#include <linux/errno.h>
-#include <linux/types.h>
-#include <linux/proc_fs.h>
-#include <linux/fcntl.h>
-#include <asm/system.h>
+/* 设备打开函数 */
+static int demo_open(struct inode *inode, struct file *file) {
+    open_count++;  // 增加设备打开计数
+    printk(KERN_INFO "demodrv: Device opened %d time(s)\n", open_count);
+    return 0;
+}
 
-/* COPY TO USER */
-/* printk() */
-/* kmalloc() */
-/* everything... */
-/* error codes */
-/* size_t */
-/* 0_ACCMODE */
-/* cli(), *_flags */
+/* 设备关闭函数 */
+static int demo_release(struct inode *inode, struct file *file) {
+    printk(KERN_INFO "demodrv: Device closed\n");
+    return 0;
+}
 
-/***********定义常量、变量、函数******/
-
-/******* demo_read()函数******/
-static ssize_t demo_read(struct file *filp, char *buffer, size_t count, loff_t *f_pos) {
-    if (count > MAX_BUF_LEN)
-        count = MAX_BUF_LEN;
-    // copy_to_user(buffer, drv_buf, count);
-    printk("user read data from driver\n");
+/* 从设备读取数据 */
+static ssize_t demo_read(struct file *file, char __user *buf, size_t count, loff_t *ppos) {
+    if (count > BUF_LEN) count = BUF_LEN;  // 限制读取长度
+    if (copy_to_user(buf, device_buffer, count)) {  // 将数据从内核空间复制到用户空间
+        return -EFAULT;
+    }
+    printk(KERN_INFO "demodrv: Read %zu bytes\n", count);
     return count;
 }
 
-/******* demo_write()函数******/
-static ssize_t demo_write(struct file *filp, const char *buffer, size_t count) {
-    if (count > MAX_BUF_LEN)
-        count = MAX_BUF_LEN;
-    // copy_from_user(drv_buf, buffer, count);
-    WRI_LENGTH = count;
-    printk("user write data to driver\n");
-    do_write();
+/* 向设备写入数据 */
+static ssize_t demo_write(struct file *file, const char __user *buf, size_t count, loff_t *ppos) {
+    if (count > BUF_LEN) count = BUF_LEN;  // 限制写入长度
+    if (copy_from_user(device_buffer, buf, count)) {  // 将数据从用户空间复制到内核空间
+        return -EFAULT;
+    }
+    printk(KERN_INFO "demodrv: Written %zu bytes\n", count);
     return count;
 }
 
-/******* do_write()函数:将缓冲区中的数逆序******/
-static void do_write() {
-    int i;
-    int len = WRI_LENGTH;
-    char tmp;
-    for (i = 0; i < (len >> 1); i++, len--)
-        tmp = drv_buf[len - 1], drv_buf[len - 1] = drv_buf[i], drv_buf[i] = tmp;
-}
-
-/******* demo_init()函数******/
+/* 模块初始化函数 */
 static int __init demo_init(void) {
     int result;
-    result = register_chrdev(demo_MAJOR, "demodrv", &demo_fops);
-    if (result < 0)
-        printk("DEVICE_NAME initialized failure\n");
-    else
-        printk("DEVICE_NAME initialized\n");
-    return result;
+
+    /* 分配设备缓存区 */
+    device_buffer = kmalloc(BUF_LEN, GFP_KERNEL);
+    if (!device_buffer) {
+        printk(KERN_ALERT "demodrv: Failed to allocate device buffer\n");
+        return -ENOMEM;
+    }
+
+    /* 注册字符设备 */
+    result = register_chrdev(MAJOR_NUM, DEVICE_NAME, &fops);
+    if (result < 0) {
+        printk(KERN_ALERT "demodrv: Registering device failed with %d\n", result);
+        kfree(device_buffer);
+        return result;
+    }
+
+    printk(KERN_INFO "demodrv: Registered with major number %d\n", MAJOR_NUM);
+    return 0;
 }
 
-/******* demo_exit()函数******/
+/* 模块清理函数 */
 static void __exit demo_exit(void) {
-    // unregister_chrdev(demo_MAJOR, "demodrv");
-    // kfree(demo_devices);
-    printk("DEVICE_NAME unloaded\n");
+    unregister_chrdev(MAJOR_NUM, DEVICE_NAME);  // 注销字符设备
+    kfree(device_buffer);  // 释放设备缓存区
+    printk(KERN_INFO "demodrv: Unregistered and memory freed\n");
 }
 
-/*******系统调用模块接口******/
 module_init(demo_init);
 module_exit(demo_exit);
+
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("Your Name");
+MODULE_DESCRIPTION("A simple character device driver");
 ```
 
 4. 编写完毕后保存文件，按照此方式分别编写一个测试驱动的程序取名为`test_demo.c`，一个`Makefile`文件。

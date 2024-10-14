@@ -139,7 +139,7 @@
     ```bash
     gedit demo.c
     ```
-![Ismod.ko_makefile](assets/lsmod 第一部分.png)
+![Ismod.ko_makefile](assets/lsmod第一部分.png)
 
     demo.c文件内容
    ```bash

@@ -34,7 +34,7 @@
 
 3. 在文件中添加以下代码，创建一个简单的驱动程序：
    ```c
-   // hello.c
+ // hello.c
 #include <linux/init.h>      // 用于模块初始化和退出宏定义
 #include <linux/module.h>    // 用于定义这是一个内核模块
 
@@ -51,8 +51,7 @@ module_init(hello_init); // 告诉内核加载模块时调用hello_init函数
 module_exit(hello_exit); // 告诉内核卸载模块时调用hello_exit函数
 
 MODULE_LICENSE("GPL"); // 指定模块的许可证类型
-
-   ```
+```
 
 4. 保存并关闭`hello.c`文件。
 

@@ -51,6 +51,7 @@ module_init(hello_init); // 告诉内核加载模块时调用hello_init函数
 module_exit(hello_exit); // 告诉内核卸载模块时调用hello_exit函数
 
 MODULE_LICENSE("GPL"); // 指定模块的许可证类型
+
    ```
 
 4. 保存并关闭`hello.c`文件。

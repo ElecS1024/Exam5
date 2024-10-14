@@ -33,7 +33,7 @@
    - 在这一步中，你也可以使用Vim来完成操作。在确保你的路径为drv的前提下，使用`Vim hello.c`来完成内容创建。
 
 3. 在文件中添加以下代码，创建一个简单的驱动程序：
-   ```c
+```c
  // hello.c
 #include <linux/init.h>      // 用于模块初始化和退出宏定义
 #include <linux/module.h>    // 用于定义这是一个内核模块

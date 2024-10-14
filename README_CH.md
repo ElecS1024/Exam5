@@ -34,25 +34,23 @@
 
 3. 在文件中添加以下代码，创建一个简单的驱动程序：
    ```c
-   #include<linux/init.h>
-   #include <linux/module.h>
-   #include <linux/kernel.h>
+   // hello.c
+#include <linux/init.h>      // 用于模块初始化和退出宏定义
+#include <linux/module.h>    // 用于定义这是一个内核模块
 
-   static int__init hello_init(void)
-   {
-       printk(KERN_ALERT "Hello, World!\n");
-       return 0;
-   }
+static int __init hello_init(void) {
+    printk(KERN_ALERT "Hello World!\n");
+    return 0;
+}
 
-   static void__exit hello_exit(void) {
-       printk(KERN_INFO "Goodbye, World!\n");
-   }
+static void __exit hello_exit(void) {
+    printk(KERN_ALERT "Goodbye World!\n");
+}
 
-   MODULE_LICENSE("GPL");
-   MODULE_DESCRIPTION("A simple hello world module");
-   MODULE_AUTHOR("Your Name");
-   module_init(hello_init);
-   module_init(hello_exit);
+module_init(hello_init); // 告诉内核加载模块时调用hello_init函数
+module_exit(hello_exit); // 告诉内核卸载模块时调用hello_exit函数
+
+MODULE_LICENSE("GPL"); // 指定模块的许可证类型
    ```
 
 4. 保存并关闭`hello.c`文件。
